@@ -101,15 +101,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { NewsItem } from '@/types'
 
 const router = useRouter()
+const route = useRoute()
 const activeCategory = ref('')
 const searchKeyword = ref('')
+
+onMounted(() => {
+  if (route.query.keyword) {
+    searchKeyword.value = String(route.query.keyword)
+  }
+})
 
 const handleNotImplemented = () => {
   ElMessage.info('功能开发中，敬请期待')
