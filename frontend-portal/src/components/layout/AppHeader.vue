@@ -31,6 +31,24 @@
       </nav>
 
       <div class="header-actions">
+        <div class="search-container" :class="{ expanded: searchExpanded }">
+          <el-icon class="search-icon" @click="toggleSearch">
+            <Search />
+          </el-icon>
+          <input
+            v-if="searchExpanded"
+            ref="searchInputRef"
+            v-model="searchKeyword"
+            type="text"
+            class="search-input"
+            placeholder="搜索..."
+            @keyup.enter="handleSearch"
+            @blur="handleSearchBlur"
+          />
+          <el-icon v-if="searchExpanded" class="close-icon" @click="closeSearch">
+            <Close />
+          </el-icon>
+        </div>
         <el-button class="contact-btn" type="primary" round @click="router.push('/contact')">
           开始咨询
           <el-icon class="btn-arrow"><Right /></el-icon>
@@ -60,15 +78,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { Search, Close, Right } from '@element-plus/icons-vue'
 import type { NavItem } from '@/types'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const route = useRoute()
 
 const mobileMenuVisible = ref(false)
 const isScrolled = ref(false)
+const searchExpanded = ref(false)
+const searchKeyword = ref('')
+const searchInputRef = ref<HTMLInputElement | null>(null)
 
 const navItems: NavItem[] = [
   { name: '首页', path: '/' },
@@ -84,6 +107,42 @@ const isActive = (path: string) => {
 
 const toggleMobileMenu = () => {
   mobileMenuVisible.value = !mobileMenuVisible.value
+}
+
+const toggleSearch = () => {
+  searchExpanded.value = !searchExpanded.value
+  if (searchExpanded.value) {
+    nextTick(() => {
+      searchInputRef.value?.focus()
+    })
+  }
+}
+
+const closeSearch = () => {
+  searchExpanded.value = false
+  searchKeyword.value = ''
+}
+
+const handleSearchBlur = () => {
+  setTimeout(() => {
+    if (!searchKeyword.value) {
+      searchExpanded.value = false
+    }
+  }, 200)
+}
+
+const handleSearch = () => {
+  if (!searchKeyword.value.trim()) {
+    ElMessage.warning('请输入搜索关键词')
+    return
+  }
+  
+  ElMessage.success(`正在搜索: ${searchKeyword.value}`)
+  router.push({
+    path: '/news',
+    query: { keyword: searchKeyword.value }
+  })
+  closeSearch()
 }
 
 const handleScroll = () => {
@@ -170,6 +229,83 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: $spacing-md;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+  transition: all $transition-normal;
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  margin-right: 8px;
+
+  &.expanded {
+    width: 240px;
+    margin-right: 8px;
+    
+    .search-input {
+      width: 100%;
+      padding: 8px 40px 8px 36px;
+      opacity: 1;
+    }
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 8px;
+    z-index: 11;
+    color: $text-color-regular;
+    cursor: pointer;
+    transition: color $transition-fast;
+    width: 20px;
+    height: 20px;
+
+    &:hover {
+      color: $primary-color;
+    }
+  }
+
+  .close-icon {
+    position: absolute;
+    right: 10px;
+    z-index: 11;
+    color: $text-color-regular;
+    cursor: pointer;
+    transition: color $transition-fast;
+    width: 18px;
+    height: 18px;
+
+    &:hover {
+      color: $primary-color;
+    }
+  }
+
+  .search-input {
+    width: 0;
+    height: 36px;
+    padding: 0;
+    border: none;
+    outline: none;
+    background: $bg-color-light;
+    border-radius: $border-radius-full;
+    font-size: $font-size-sm;
+    color: $text-color-primary;
+    transition: all $transition-normal;
+    opacity: 0;
+    position: relative;
+    z-index: 10;
+
+    &::placeholder {
+      color: $text-color-placeholder;
+    }
+
+    &:focus {
+      background: $bg-color-white;
+      box-shadow: $shadow-sm;
+    }
+  }
 }
 
 .contact-btn {
