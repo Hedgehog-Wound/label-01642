@@ -236,10 +236,17 @@ onUnmounted(() => {
   align-items: center;
   position: relative;
   transition: all $transition-normal;
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  margin-right: 8px;
 
   &.expanded {
+    width: 240px;
+    margin-right: 8px;
+    
     .search-input {
-      width: 200px;
+      width: 100%;
       padding: 8px 40px 8px 36px;
       opacity: 1;
     }
@@ -247,11 +254,13 @@ onUnmounted(() => {
 
   .search-icon {
     position: absolute;
-    left: 10px;
-    z-index: 1;
+    left: 8px;
+    z-index: 11;
     color: $text-color-regular;
     cursor: pointer;
     transition: color $transition-fast;
+    width: 20px;
+    height: 20px;
 
     &:hover {
       color: $primary-color;
@@ -261,10 +270,12 @@ onUnmounted(() => {
   .close-icon {
     position: absolute;
     right: 10px;
-    z-index: 1;
+    z-index: 11;
     color: $text-color-regular;
     cursor: pointer;
     transition: color $transition-fast;
+    width: 18px;
+    height: 18px;
 
     &:hover {
       color: $primary-color;
@@ -273,6 +284,7 @@ onUnmounted(() => {
 
   .search-input {
     width: 0;
+    height: 36px;
     padding: 0;
     border: none;
     outline: none;
@@ -282,6 +294,8 @@ onUnmounted(() => {
     color: $text-color-primary;
     transition: all $transition-normal;
     opacity: 0;
+    position: relative;
+    z-index: 10;
 
     &::placeholder {
       color: $text-color-placeholder;
