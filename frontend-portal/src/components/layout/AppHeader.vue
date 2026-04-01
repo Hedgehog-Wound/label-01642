@@ -31,7 +31,46 @@
       </nav>
 
       <div class="header-actions">
-        <el-button class="contact-btn" type="primary" round @click="router.push('/contact')">
+        <div class="search-wrapper">
+          <el-button class="search-btn" :class="{ active: showSearch }" circle @click="toggleSearch">
+            <el-icon><Search /></el-icon>
+          </el-button>
+          
+          <transition name="fade">
+            <div v-if="showSearch" class="search-panel" @click.stop>
+              <div class="search-input-wrapper">
+                <el-input
+                  v-model="searchKeyword"
+                  placeholder="输入搜索内容..."
+                  :prefix-icon="Search"
+                  clearable
+                  size="large"
+                  class="search-input"
+                  @keyup.enter="handleSearch"
+                  ref="searchInputRef"
+                />
+                <el-button type="primary" class="search-submit-btn" @click="handleSearch">
+                  搜索
+                </el-button>
+              </div>
+              
+              <div v-if="searchKeyword && hotSearches.length > 0" class="search-suggestions">
+                <div class="suggestions-title">搜索建议</div>
+                <div
+                  v-for="item in hotSearches"
+                  :key="item.id"
+                  class="suggestion-item"
+                  @click="selectSuggestion(item.title)"
+                >
+                  <el-icon class="suggestion-icon"><Search /></el-icon>
+                  <span>{{ item.title }}</span>
+                </div>
+              </div>
+            </div>
+          </transition>
+        </div>
+        
+        <el-button class="contact-btn hidden-mobile" type="primary" round @click="router.push('/contact')">
           开始咨询
           <el-icon class="btn-arrow"><Right /></el-icon>
         </el-button>
@@ -39,6 +78,10 @@
           <span :class="{ open: mobileMenuVisible }"></span>
         </div>
       </div>
+
+      <transition name="fade">
+        <div v-if="showSearch" class="search-overlay" @click="closeSearch"></div>
+      </transition>
     </div>
 
     <!-- 移动端菜单 -->
@@ -60,15 +103,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { Search, Right } from '@element-plus/icons-vue'
 import type { NavItem } from '@/types'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const route = useRoute()
 
 const mobileMenuVisible = ref(false)
 const isScrolled = ref(false)
+const showSearch = ref(false)
+const searchKeyword = ref('')
+const searchInputRef = ref<HTMLElement | null>(null)
+
+interface HotSearchItem {
+  id: number
+  title: string
+}
+
+const hotSearches: HotSearchItem[] = [
+  { id: 1, title: '产品介绍' },
+  { id: 2, title: '新闻动态' },
+  { id: 3, title: '联系方式' },
+  { id: 4, title: '关于我们' },
+]
 
 const navItems: NavItem[] = [
   { name: '首页', path: '/' },
@@ -86,16 +146,55 @@ const toggleMobileMenu = () => {
   mobileMenuVisible.value = !mobileMenuVisible.value
 }
 
+const toggleSearch = () => {
+  showSearch.value = !showSearch.value
+  if (showSearch.value) {
+    nextTick(() => {
+      searchInputRef.value?.focus()
+    })
+  }
+}
+
+const closeSearch = () => {
+  showSearch.value = false
+  searchKeyword.value = ''
+}
+
+const handleSearch = () => {
+  if (!searchKeyword.value.trim()) {
+    ElMessage.warning('请输入搜索内容')
+    return
+  }
+  
+  ElMessage.success(`正在搜索: ${searchKeyword.value}`)
+  
+  closeSearch()
+}
+
+const selectSuggestion = (keyword: string) => {
+  searchKeyword.value = keyword
+  handleSearch()
+}
+
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 20
 }
 
+const handleClickOutside = (e: MouseEvent) => {
+  const target = e.target as HTMLElement
+  if (showSearch.value && !target.closest('.search-wrapper')) {
+    closeSearch()
+  }
+}
+
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
+  document.addEventListener('click', handleClickOutside)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -270,5 +369,137 @@ onUnmounted(() => {
 .slide-fade-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity $transition-fast;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.search-wrapper {
+  position: relative;
+}
+
+.search-btn {
+  background: transparent;
+  border: none;
+  color: $text-color-regular;
+  transition: all $transition-fast;
+
+  &:hover,
+  &.active {
+    background: rgba($primary-color, 0.1);
+    color: $primary-color;
+  }
+}
+
+.search-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 999;
+}
+
+.search-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 420px;
+  background: $bg-color-white;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-xl;
+  padding: $spacing-md;
+  z-index: 1001;
+  transform-origin: top right;
+  animation: slideDown 0.2s ease;
+
+  @media (max-width: $breakpoint-md) {
+    position: fixed;
+    top: $header-height;
+    left: $spacing-md;
+    right: $spacing-md;
+    width: auto;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.search-input-wrapper {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+
+  :deep(.el-input__wrapper) {
+    box-shadow: none;
+    border: 1px solid $border-color-light;
+    transition: all $transition-fast;
+
+    &:hover,
+    &.is-focus {
+      border-color: $primary-color;
+    }
+  }
+}
+
+.search-submit-btn {
+  background: $gradient-primary;
+  border: none;
+  font-weight: 600;
+}
+
+.search-suggestions {
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1px solid $border-color-light;
+}
+
+.suggestions-title {
+  font-size: $font-size-xs;
+  color: $text-color-placeholder;
+  margin-bottom: $spacing-sm;
+  font-weight: 500;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $border-radius-md;
+  cursor: pointer;
+  transition: all $transition-fast;
+  font-size: $font-size-sm;
+  color: $text-color-regular;
+
+  &:hover {
+    background: $bg-color-light;
+    color: $primary-color;
+  }
+
+  .suggestion-icon {
+    font-size: 16px;
+    color: $text-color-placeholder;
+  }
 }
 </style>
