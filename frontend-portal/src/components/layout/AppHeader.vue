@@ -31,6 +31,17 @@
       </nav>
 
       <div class="header-actions">
+        <div class="search-box hidden-mobile">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="搜索..."
+            :prefix-icon="Search"
+            clearable
+            size="default"
+            @keyup.enter="handleSearch"
+          />
+        </div>
+        <el-button class="search-btn hidden-desktop" circle :icon="Search" @click="toggleSearchPanel" />
         <el-button class="contact-btn" type="primary" round @click="router.push('/contact')">
           开始咨询
           <el-icon class="btn-arrow"><Right /></el-icon>
@@ -40,6 +51,22 @@
         </div>
       </div>
     </div>
+
+    <!-- 移动端搜索面板 -->
+    <transition name="slide-fade">
+      <div v-if="searchPanelVisible" class="search-panel hidden-desktop">
+        <div class="search-panel-container">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="搜索..."
+            :prefix-icon="Search"
+            clearable
+            size="large"
+            @keyup.enter="handleSearch"
+          />
+        </div>
+      </div>
+    </transition>
 
     <!-- 移动端菜单 -->
     <transition name="slide-fade">
@@ -62,6 +89,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { Search, Right } from '@element-plus/icons-vue'
 import type { NavItem } from '@/types'
 
 const router = useRouter()
@@ -69,6 +97,8 @@ const route = useRoute()
 
 const mobileMenuVisible = ref(false)
 const isScrolled = ref(false)
+const searchKeyword = ref('')
+const searchPanelVisible = ref(false)
 
 const navItems: NavItem[] = [
   { name: '首页', path: '/' },
@@ -84,6 +114,26 @@ const isActive = (path: string) => {
 
 const toggleMobileMenu = () => {
   mobileMenuVisible.value = !mobileMenuVisible.value
+  if (searchPanelVisible.value) {
+    searchPanelVisible.value = false
+  }
+}
+
+const toggleSearchPanel = () => {
+  searchPanelVisible.value = !searchPanelVisible.value
+  if (mobileMenuVisible.value) {
+    mobileMenuVisible.value = false
+  }
+}
+
+const handleSearch = () => {
+  if (searchKeyword.value.trim()) {
+    router.push({
+      path: '/news',
+      query: { keyword: searchKeyword.value.trim() }
+    })
+    searchPanelVisible.value = false
+  }
 }
 
 const handleScroll = () => {
@@ -172,6 +222,32 @@ onUnmounted(() => {
   gap: $spacing-md;
 }
 
+.search-box {
+  width: 200px;
+  
+  :deep(.el-input__wrapper) {
+    border-radius: $border-radius-full;
+    transition: all $transition-fast;
+    
+    &:hover,
+    &.is-focus {
+      box-shadow: 0 0 0 1px $primary-color;
+    }
+  }
+}
+
+.search-btn {
+  background: transparent;
+  border: 1px solid $border-color-light;
+  color: $text-color-secondary;
+  
+  &:hover {
+    color: $primary-color;
+    border-color: $primary-color;
+    background: rgba($primary-color, 0.05);
+  }
+}
+
 .contact-btn {
   background: $gradient-primary;
   border: none;
@@ -185,6 +261,22 @@ onUnmounted(() => {
   &:hover .btn-arrow {
     transform: translateX(4px);
   }
+}
+
+.search-panel {
+  position: absolute;
+  top: $header-height;
+  left: 0;
+  right: 0;
+  background: $bg-color-white;
+  border-bottom: 1px solid $border-color-light;
+  padding: $spacing-md;
+  box-shadow: $shadow-lg;
+}
+
+.search-panel-container {
+  max-width: $container-max-width;
+  margin: 0 auto;
 }
 
 .mobile-menu-btn {
